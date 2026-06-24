@@ -4,7 +4,85 @@
 const CACHE_NAME = 'ledger-v1';
 
 const ASSETS = [
-  '/',
+  '/',// Service Worker — 店铺记账本
+// 策略: 安装时预缓存所有核心+CDN资源，确保首次在线访问后完全离线可用
+
+const CACHE_NAME = 'ledger-v3';
+
+// 所有需要缓存的资源
+const ALL_ASSETS = [
+  // 本站资源
+  '/jzbook/',
+  '/jzbook/index.html',
+  '/jzbook/manifest.json',
+  // CDN 库文件（离线必备）
+  'https://unpkg.com/dexie@4/dist/dexie.min.js',
+  'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js',
+  'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'
+];
+
+// ── Install: 一次性缓存所有资源 ──────────────────────────────
+self.addEventListener('install', event => {
+  console.log('SW v3: installing...');
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => {
+      // 逐个添加，单个失败不影响整体
+      return Promise.allSettled(
+        ALL_ASSETS.map(url =>
+          cache.add(url).catch(err => {
+            console.warn('SW: 缓存失败 ' + url, err);
+          })
+        )
+      );
+    })
+  );
+  self.skipWaiting();
+});
+
+// ── Activate: 清旧缓存 ───────────────────────────────────────
+self.addEventListener('activate', event => {
+  console.log('SW v3: activated');
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+// ── Fetch: 缓存优先 ─────────────────────────────────────────
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+  if (!event.request.url.startsWith('http')) return;
+
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      if (cached) {
+        // 后台更新（静默）
+        fetch(event.request).then(resp => {
+          if (resp && resp.ok) {
+            caches.open(CACHE_NAME).then(c => c.put(event.request, resp));
+          }
+        }).catch(() => {});
+        return cached;
+      }
+
+      // 网络请求
+      return fetch(event.request).then(resp => {
+        // 缓存成功的响应（包括 status:0 的 opaque 响应）
+        if (resp && (resp.ok || resp.status === 0)) {
+          caches.open(CACHE_NAME).then(c => {
+            try { c.put(event.request, resp.clone()); } catch(e) {}
+          });
+        }
+        return resp;
+      }).catch(() => {
+        return new Response('离线不可用', { status: 503 });
+      });
+    })
+  );
+});
+
   '/index.html',
   '/manifest.json'
 ];
