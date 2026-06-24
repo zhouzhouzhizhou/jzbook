@@ -1,7 +1,51 @@
 // Service Worker — 店铺记账本
 // 缓存策略: Stale-While-Revalidate（先返回缓存，后台更新）
 
-const CACHE_NAME = 'ledger-v1';
+const CACHE_NAME = 'ledger-v1';// Service Worker — 店铺记账本 (纯原生，无CDN依赖)
+
+const CACHE_NAME = 'ledger-v4';
+
+const ASSETS = [
+  '/jzbook/',
+  '/jzbook/index.html',
+  '/jzbook/manifest.json'
+];
+
+self.addEventListener('install', event => {
+  console.log('SW v4: install');
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  console.log('SW v4: activate');
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      // 后台更新
+      fetch(event.request).then(resp => {
+        if (resp && resp.ok) {
+          caches.open(CACHE_NAME).then(c => c.put(event.request, resp));
+        }
+      }).catch(() => {});
+      // 返回缓存或网络
+      return cached || fetch(event.request);
+    })
+  );
+});
+
 
 const ASSETS = [
   '/',// Service Worker — 店铺记账本
