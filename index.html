@@ -3,7 +3,1917 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes"><!DOCTYPE html>
+  <meta name="apple-mobile-web-app-capable" content="yes"><!DOCTYPE html><!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#d4888c">
+  <link rel="manifest" href="/jzbook/manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' rx='40' fill='%23d4888c'/%3E%3Ctext x='100' y='130' text-anchor='middle' font-size='100'%3E📒%3C/text%3E%3C/svg%3E">
+  <title>店铺记账本</title>
+
+  <style>
+    /* ========== CSS Variables ========== */
+    :root {
+      --bg:          #fdf6f6;
+      --card:        #ffffff;
+      --pink-100:    #fef0f0;
+      --pink-200:    #fce8e8;
+      --pink-300:    #f0cccc;
+      --pink-400:    #e0a8ac;
+      --pink-500:    #d4888c;
+      --pink-600:    #c07075;
+      --success:     #7bc67e;
+      --danger:      #e07070;
+      --warning:     #e8b45a;
+      --text:        #4a3335;
+      --text-light:  #886668;
+      --text-muted:  #b8a0a2;
+      --border:      #f0e0e0;
+      --shadow-sm:   0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md:   0 2px 8px rgba(0,0,0,0.08);
+      --shadow-lg:   0 4px 16px rgba(0,0,0,0.12);
+      --radius-sm:   8px;
+      --radius-md:   12px;
+      --radius-lg:   16px;
+      --radius-full: 999px;
+      --font:        -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      --tab-height:  56px;
+    }
+
+    /* ========== Reset ========== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      padding-top: env(safe-area-inset-top);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ========== Page Container ========== */
+    .page {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: var(--space-lg) var(--space-lg) 0;
+      display: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .page.active {
+      display: block;
+    }
+    .page > .page-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: var(--space-lg);
+    }
+
+    /* ========== Bottom Tab Bar ========== */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(var(--tab-height) + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+    }
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      min-height: var(--tab-height);
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: color 0.15s;
+      position: relative;
+    }
+    .tab-item.active {
+      color: var(--pink-500);
+    }
+    .tab-item.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 2px;
+      background: var(--pink-500);
+      border-radius: 0 0 2px 2px;
+    }
+    .tab-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+    .tab-label {
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    /* ========== Cards ========== */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ========== Summary Cards (3-column) ========== */
+    .summary-row {
+      display: flex;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+    }
+    .summary-card {
+      flex: 1;
+      background: var(--card);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .summary-card .label {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .summary-card .value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .summary-card .value.income { color: var(--text); }
+    .summary-card .value.cost   { color: var(--text-light); }
+    .summary-card .value.profit { color: var(--success); }
+    .summary-card .value.negative { color: var(--danger); }
+
+    /* ========== Buttons ========== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      min-width: 44px;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      font-weight: 600;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      -webkit-appearance: none;
+    }
+    .btn:active {
+      opacity: 0.85;
+    }
+    .btn-primary {
+      background: var(--pink-500);
+      color: #fff;
+      width: 100%;
+      height: 48px;
+      font-size: 16px;
+      border-radius: var(--radius-md);
+    }
+    .btn-primary:active {
+      background: var(--pink-600);
+    }
+    .btn-secondary {
+      background: var(--pink-200);
+      color: var(--pink-500);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      height: 40px;
+      padding: 0 var(--space-lg);
+    }
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      height: 40px;
+      padding: 0 var(--space-lg);
+    }
+    .btn-pill {
+      border-radius: var(--radius-full);
+      height: 36px;
+      padding: 0 var(--space-lg);
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .btn-pill.active {
+      background: var(--pink-500);
+      color: #fff;
+    }
+    .btn-pill:not(.active) {
+      background: var(--pink-200);
+      color: var(--pink-500);
+    }
+    .btn-block {
+      display: block;
+      width: 100%;
+    }
+
+    /* ========== Form Elements ========== */
+    .form-group {
+      margin-bottom: var(--space-lg);
+    }
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: var(--space-sm);
+    }
+    .form-input, .form-select {
+      width: 100%;
+      height: 44px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--pink-200);
+      color: var(--text);
+      font-size: 16px;
+      font-family: var(--font);
+      padding: 0 var(--space-md);
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--pink-400);
+      border-width: 2px;
+    }
+    .form-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23886668'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    /* ========== Quantity Stepper ========== */
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+    .stepper-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--pink-400);
+      background: var(--card);
+      color: var(--pink-500);
+      font-size: 22px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      -webkit-appearance: none;
+    }
+    .stepper-btn:active {
+      background: var(--pink-100);
+    }
+    .stepper-value {
+      font-size: 24px;
+      font-weight: 700;
+      min-width: 40px;
+      text-align: center;
+      color: var(--text);
+    }
+
+    /* ========== Modal ========== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+    }
+    .modal-overlay.show {
+      display: flex;
+    }
+    .modal {
+      background: var(--card);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: var(--space-xl);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(100%);
+      transition: transform 0.2s ease-out;
+    }
+    .modal-overlay.show .modal {
+      transform: translateY(0);
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: var(--space-xl);
+      text-align: center;
+    }
+    .modal-actions {
+      display: flex;
+      gap: var(--space-sm);
+      margin-top: var(--space-xl);
+    }
+
+    /* ========== Toast ========== */
+    .toast {
+      position: fixed;
+      top: calc(env(safe-area-inset-top) + var(--space-lg));
+      left: 50%;
+      transform: translateX(-50%) translateY(-120%);
+      background: var(--text);
+      color: #fff;
+      padding: var(--space-md) var(--space-xl);
+      border-radius: var(--radius-full);
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 300;
+      transition: transform 0.2s ease-out;
+      white-space: nowrap;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast.success {
+      background: var(--success);
+    }
+    .toast.error {
+      background: var(--danger);
+    }
+
+    /* ========== Sub Tabs ========== */
+    .sub-tabs {
+      display: flex;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-xl);
+    }
+    .sub-tab {
+      flex: 1;
+    }
+
+    /* ========== Product Card (Inventory) ========== */
+    .product-card {
+      background: var(--card);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-md);
+      box-shadow: var(--shadow-sm);
+      border-left: 3px solid transparent;
+    }
+    .product-card.warning {
+      border-left-color: var(--danger);
+    }
+    .product-name {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .product-info {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: var(--space-sm);
+    }
+    .stock-bar-wrap {
+      height: 6px;
+      background: var(--pink-200);
+      border-radius: 3px;
+      margin-bottom: 4px;
+      overflow: hidden;
+    }
+    .stock-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s, background 0.3s;
+    }
+    .stock-bar-fill.safe    { background: var(--success); }
+    .stock-bar-fill.low     { background: var(--warning); }
+    .stock-bar-fill.danger  { background: var(--danger); }
+    .stock-num {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .stock-num.danger { color: var(--danger); }
+    .product-actions {
+      display: flex;
+      gap: var(--space-sm);
+      margin-top: var(--space-sm);
+    }
+
+    /* ========== Calendar ========== */
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-lg);
+    }
+    .cal-month-label {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .cal-nav-btn {
+      width: 44px;
+      height: 44px;
+      border: none;
+      background: var(--pink-200);
+      color: var(--pink-500);
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-appearance: none;
+    }
+    .cal-nav-btn:active { background: var(--pink-300); }
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: var(--space-sm);
+      font-weight: 600;
+    }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .cal-cell {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      cursor: pointer;
+      position: relative;
+    }
+    .cal-cell.other-month {
+      color: var(--text-muted);
+    }
+    .cal-cell.today {
+      font-weight: 800;
+      box-shadow: inset 0 0 0 2px var(--pink-500);
+    }
+    .cal-cell.selected {
+      background: var(--pink-300);
+      font-weight: 700;
+    }
+    .cal-cell:active {
+      background: var(--pink-200);
+    }
+    .cal-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--pink-500);
+      position: absolute;
+      bottom: 6px;
+    }
+
+    /* ========== Record List ========== */
+    .record-section {
+      margin-bottom: var(--space-lg);
+    }
+    .record-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-light);
+      margin-bottom: var(--space-sm);
+    }
+    .record-item {
+      background: var(--card);
+      border-radius: var(--radius-sm);
+      padding: var(--space-md);
+      margin-bottom: var(--space-sm);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .record-item-left {
+      flex: 1;
+    }
+    .record-item-name {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .record-item-detail {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+    .record-item-right {
+      text-align: right;
+    }
+    .record-item-amount {
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .record-item-profit {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .record-item-profit.positive { color: var(--success); }
+    .record-item-profit.negative { color: var(--danger); }
+
+    /* ========== Stats ========== */
+    .chart-wrap {
+      background: var(--card);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-lg);
+      box-shadow: var(--shadow-sm);
+    }
+    .chart-wrap {
+      height: 240px;
+      position: relative;
+    }
+    .chart-wrap canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* ========== Dashboard Quick Actions ========== */
+    .quick-actions {
+      display: flex;
+      gap: var(--space-md);
+    }
+    .quick-btn {
+      flex: 1;
+      height: 56px;
+      border-radius: var(--radius-md);
+      border: none;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      -webkit-appearance: none;
+    }
+    .quick-btn.purchase {
+      background: var(--pink-300);
+      color: var(--text);
+    }
+    .quick-btn.sale {
+      background: var(--pink-500);
+      color: #fff;
+    }
+    .quick-btn:active { opacity: 0.85; }
+
+    /* ========== Empty State ========== */
+    .empty-state {
+      text-align: center;
+      padding: var(--space-2xl) 0;
+      color: var(--text-muted);
+    }
+    .empty-state .icon {
+      font-size: 48px;
+      margin-bottom: var(--space-md);
+    }
+    .empty-state .text {
+      font-size: 14px;
+    }
+
+    /* ========== Danger Zone ========== */
+    .danger-zone {
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .warning-tag {
+      display: inline-block;
+      background: var(--danger);
+      color: #fff;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: var(--radius-full);
+      margin-left: var(--space-xs);
+      font-weight: 700;
+    }
+
+    /* ========== Spacing helpers ========== */
+    .mt-sm { margin-top: var(--space-sm); }
+    .mt-md { margin-top: var(--space-md); }
+    .mt-lg { margin-top: var(--space-lg); }
+    .mb-sm { margin-bottom: var(--space-sm); }
+    .mb-md { margin-bottom: var(--space-md); }
+    .mb-lg { margin-bottom: var(--space-lg); }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+  </style>
+</head>
+<body>
+
+  <!-- ====== Tab 1: 首页 ====== -->
+  <div class="page active" id="page-home">
+    <div class="page-title">📅 <span id="home-date">2026年6月24日 星期三</span></div>
+
+    <!-- 今日汇总卡片 -->
+    <div class="summary-row" id="home-summary">
+      <div class="summary-card">
+        <div class="label">💰 今日收入</div>
+        <div class="value income" id="home-income">¥0.00</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">📥 今日成本</div>
+        <div class="value cost" id="home-cost">¥0.00</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">📊 今日利润</div>
+        <div class="value profit" id="home-profit">¥0.00</div>
+      </div>
+    </div>
+
+    <!-- 今日概览 -->
+    <div class="card mb-lg">
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px;">📋 今日概览</div>
+      <div style="display:flex;gap:24px;font-size:14px;color:var(--text-light);">
+        <span>进货 <strong id="home-purchase-count" style="color:var(--text);">0</strong> 笔</span>
+        <span>卖出 <strong id="home-sale-count" style="color:var(--text);">0</strong> 笔</span>
+      </div>
+    </div>
+
+    <!-- 低库存提醒 -->
+    <div id="home-low-stock-section" style="display:none;">
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px;">⚠️ 库存不足（&lt; 5件）</div>
+      <div id="home-low-stock-list"></div>
+    </div>
+
+    <!-- 快捷操作 -->
+    <div class="quick-actions mt-lg">
+      <button class="quick-btn purchase" onclick="goRecord('purchase')">📥 快速进货</button>
+      <button class="quick-btn sale" onclick="goRecord('sale')">📤 快速卖出</button>
+    </div>
+  </div>
+
+  <!-- ====== Tab 2: 库存 ====== -->
+  <div class="page" id="page-inventory">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="page-title" style="margin-bottom:0;">📦 商品管理</div>
+      <button class="btn btn-pill active" onclick="openProductModal()">+ 添加</button>
+    </div>
+    <div id="product-list"></div>
+  </div>
+
+  <!-- ====== Tab 3: 记账 ====== -->
+  <div class="page" id="page-record">
+    <!-- 子 Tab -->
+    <div class="sub-tabs">
+      <div class="sub-tab">
+        <button class="btn btn-pill btn-block active" id="subtab-purchase" onclick="switchRecordMode('purchase')">📥 进货</button>
+      </div>
+      <div class="sub-tab">
+        <button class="btn btn-pill btn-block" id="subtab-sale" onclick="switchRecordMode('sale')">📤 卖出</button>
+      </div>
+    </div>
+
+    <!-- 表单 -->
+    <div class="form-group">
+      <label class="form-label">商品</label>
+      <select class="form-select" id="record-product">
+        <option value="">请选择商品</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">数量</label>
+      <div class="stepper">
+        <button class="stepper-btn" onclick="changeQty(-1)">−</button>
+        <span class="stepper-value" id="record-qty">1</span>
+        <button class="stepper-btn" onclick="changeQty(1)">+</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" id="record-price-label">进货单价</label>
+      <input type="number" inputmode="decimal" class="form-input" id="record-price" value="" placeholder="0.00" step="0.01" min="0" oninput="calcTotal()">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">总价</label>
+      <div style="font-size:20px;font-weight:700;color:var(--text);" id="record-total">¥0.00</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">日期</label>
+      <input type="date" class="form-input" id="record-date">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">备注（可选）</label>
+      <input type="text" class="form-input" id="record-note" placeholder="选填">
+    </div>
+
+    <button class="btn btn-primary" onclick="submitRecord()" id="record-submit-btn">📥 确认进货</button>
+  </div>
+
+  <!-- ====== Tab 4: 日历 ====== -->
+  <div class="page" id="page-calendar">
+    <div class="cal-header">
+      <button class="cal-nav-btn" onclick="calPrevMonth()">◀</button>
+      <span class="cal-month-label" id="cal-month-label">2026年6月</span>
+      <button class="cal-nav-btn" onclick="calNextMonth()">▶</button>
+    </div>
+    <div class="cal-weekdays">
+      <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="text-center mt-md">
+      <button class="btn btn-pill" onclick="calGoToday()">📍 回到今天</button>
+    </div>
+
+    <!-- 选中日期的记录 -->
+    <div class="mt-lg" id="cal-records">
+      <div class="record-section-title" id="cal-selected-date-label">📅 2026-06-24 的记录</div>
+      <div id="cal-purchase-list"></div>
+      <div id="cal-sale-list"></div>
+      <div class="empty-state" id="cal-empty">
+        <div class="icon">📭</div>
+        <div class="text">这天没有记录</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Tab 5: 统计 ====== -->
+  <div class="page" id="page-stats">
+    <!-- 周期切换 -->
+    <div class="sub-tabs">
+      <div class="sub-tab"><button class="btn btn-pill btn-block active" data-period="day" onclick="switchPeriod('day')">日</button></div>
+      <div class="sub-tab"><button class="btn btn-pill btn-block" data-period="week" onclick="switchPeriod('week')">周</button></div>
+      <div class="sub-tab"><button class="btn btn-pill btn-block" data-period="month" onclick="switchPeriod('month')">月</button></div>
+      <div class="sub-tab"><button class="btn btn-pill btn-block" data-period="year" onclick="switchPeriod('year')">年</button></div>
+    </div>
+
+    <!-- 日期选择 -->
+    <div class="form-group">
+      <input type="date" class="form-input" id="stats-date" onchange="refreshStats()">
+    </div>
+
+    <!-- 汇总卡片 -->
+    <div class="summary-row" id="stats-summary">
+      <div class="summary-card">
+        <div class="label">💰 总收入</div>
+        <div class="value income" id="stats-income">¥0.00</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">📥 总成本</div>
+        <div class="value cost" id="stats-cost">¥0.00</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">📊 总利润</div>
+        <div class="value profit" id="stats-profit">¥0.00</div>
+      </div>
+    </div>
+
+    <!-- 图表 -->
+    <div class="chart-wrap">
+      <canvas id="stats-chart"></canvas>
+    </div>
+
+    <!-- 导出 -->
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px;">📤 导出数据</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="date" class="form-input" id="export-start" style="flex:1;min-width:120px;">
+        <span style="color:var(--text-light);font-size:13px;">至</span>
+        <input type="date" class="form-input" id="export-end" style="flex:1;min-width:120px;">
+      </div>
+      <button class="btn btn-primary mt-md" onclick="exportExcel()" style="background:var(--success);">📥 导出 Excel</button>
+    </div>
+  </div>
+
+  <!-- ====== Bottom Tab Bar ====== -->
+  <div class="tab-bar">
+    <div class="tab-item active" data-page="home" onclick="switchTab('home')">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">首页</span>
+    </div>
+    <div class="tab-item" data-page="inventory" onclick="switchTab('inventory')">
+      <span class="tab-icon">📦</span>
+      <span class="tab-label">库存</span>
+    </div>
+    <div class="tab-item" data-page="record" onclick="switchTab('record')">
+      <span class="tab-icon">✏️</span>
+      <span class="tab-label">记账</span>
+    </div>
+    <div class="tab-item" data-page="calendar" onclick="switchTab('calendar')">
+      <span class="tab-icon">📅</span>
+      <span class="tab-label">日历</span>
+    </div>
+    <div class="tab-item" data-page="stats" onclick="switchTab('stats')">
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">统计</span>
+    </div>
+  </div>
+
+  <!-- ====== Toast ====== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ====== Modal Container ====== -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+    <div class="modal" id="modal-content" onclick="event.stopPropagation()"></div>
+  </div>
+
+  <script>
+  /* =================================================================
+     App Core — 店铺记账本 (纯原生实现，无外部依赖)
+     ================================================================= */
+
+  // ── 原生 IndexedDB 封装 (替代 Dexie.js) ─────────────────────
+
+  const DB = (() => {
+    let _db = null;
+
+    function open() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open('LedgerDB', 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('products')) {
+            db.createObjectStore('products', { keyPath: 'id', autoIncrement: true });
+          }
+          if (!db.objectStoreNames.contains('purchaseRecords')) {
+            const pr = db.createObjectStore('purchaseRecords', { keyPath: 'id', autoIncrement: true });
+            pr.createIndex('productId', 'productId', { unique: false });
+            pr.createIndex('date', 'date', { unique: false });
+          }
+          if (!db.objectStoreNames.contains('salesRecords')) {
+            const sr = db.createObjectStore('salesRecords', { keyPath: 'id', autoIncrement: true });
+            sr.createIndex('productId', 'productId', { unique: false });
+            sr.createIndex('date', 'date', { unique: false });
+          }
+        };
+        req.onsuccess = () => { _db = req.result; resolve(_db); };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function store(name) {
+      return {
+        all() {
+          return new Promise((resolve, reject) => {
+            const tx = _db.transaction(name, 'readonly');
+            const req = tx.objectStore(name).getAll();
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+          });
+        },
+        get(id) {
+          return new Promise((resolve, reject) => {
+            const req = _db.transaction(name, 'readonly').objectStore(name).get(id);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+          });
+        },
+        count() {
+          return new Promise((resolve, reject) => {
+            const req = _db.transaction(name, 'readonly').objectStore(name).count();
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+          });
+        },
+        add(obj) {
+          return new Promise((resolve, reject) => {
+            const req = _db.transaction(name, 'readwrite').objectStore(name).add(obj);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+          });
+        },
+        bulkAdd(arr) {
+          return new Promise((resolve, reject) => {
+            const tx = _db.transaction(name, 'readwrite');
+            const st = tx.objectStore(name);
+            let count = 0;
+            tx.oncomplete = () => resolve(count);
+            tx.onerror = () => reject(tx.error);
+            for (const item of arr) st.add(item);
+          });
+        },
+        update(id, changes) {
+          return new Promise((resolve, reject) => {
+            const tx = _db.transaction(name, 'readwrite');
+            const st = tx.objectStore(name);
+            const getReq = st.get(id);
+            getReq.onsuccess = () => {
+              const obj = getReq.result;
+              if (!obj) { reject(new Error('not found')); return; }
+              Object.assign(obj, changes);
+              st.put(obj);
+              tx.oncomplete = () => resolve();
+            };
+            getReq.onerror = () => reject(getReq.error);
+          });
+        },
+        delete(id) {
+          return new Promise((resolve, reject) => {
+            const req = _db.transaction(name, 'readwrite').objectStore(name).delete(id);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+          });
+        },
+        where(field, op, val) {
+          return {
+            equals(v) {
+              return new Promise((resolve, reject) => {
+                const tx = _db.transaction(name, 'readonly');
+                const idx = tx.objectStore(name).index(field);
+                const req = idx.getAll(v);
+                req.onsuccess = () => {
+                  if (op === 'count') resolve(req.result.length);
+                  else resolve(req.result);
+                };
+                req.onerror = () => reject(req.error);
+              });
+            },
+            between(lo, hi, includeLo, includeHi) {
+              return new Promise((resolve, reject) => {
+                const tx = _db.transaction(name, 'readonly');
+                const idx = tx.objectStore(name).index(field);
+                const range = IDBKeyRange.bound(lo, hi, includeLo, includeHi);
+                const req = idx.getAll(range);
+                req.onsuccess = () => {
+                  if (op === 'count') resolve(req.result.length);
+                  else resolve(req.result);
+                };
+                req.onerror = () => reject(req.error);
+              });
+            },
+            toArray() { return this.equals(val); },
+            count() { return this.equals(val); }
+          };
+        }
+      };
+    }
+
+    return { open, store };
+  })();
+
+  // 简化 API（模仿 Dexie 用法）
+  const db = {
+    products: null,
+    purchaseRecords: null,
+    salesRecords: null,
+    async _init() {
+      await DB.open();
+      this.products = DB.store('products');
+      this.purchaseRecords = {
+        ...DB.store('purchaseRecords'),
+        where(field) {
+          const s = DB.store('purchaseRecords');
+          return s.where(field, 'array', null);
+        }
+      };
+      // Fix: override where to accept field and return filter ops
+      const rawPurchase = DB.store('purchaseRecords');
+      this.purchaseRecords = {
+        toArray: rawPurchase.all,
+        add: rawPurchase.add,
+        where(field) {
+          const self = this;
+          return {
+            equals(v) {
+              return new Promise((resolve, reject) => {
+                const tx = DB.open().then(() => {
+                  const _db = null; // will reuse existing
+                  // We need a simpler approach
+                });
+                // Actually let me just inline this properly
+                resolve(self._filter(field, '=', v));
+              });
+            }
+          };
+        }
+      };
+    }
+  };
+
+  // Let me rewrite the DB access layer more cleanly.
+  // I'll use a flat API instead of trying to mock Dexie's chaining exactly.
+
+  let _idb = null;
+  function idb() {
+    return new Promise((resolve, reject) => {
+      if (_idb) return resolve(_idb);
+      const req = indexedDB.open('LedgerDB', 1);
+      req.onupgradeneeded = () => {
+        const d = req.result;
+        if (!d.objectStoreNames.contains('products')) {
+          d.createObjectStore('products', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!d.objectStoreNames.contains('purchaseRecords')) {
+          const pr = d.createObjectStore('purchaseRecords', { keyPath: 'id', autoIncrement: true });
+          pr.createIndex('productId', 'productId', { unique: false });
+          pr.createIndex('date', 'date', { unique: false });
+        }
+        if (!d.objectStoreNames.contains('salesRecords')) {
+          const sr = d.createObjectStore('salesRecords', { keyPath: 'id', autoIncrement: true });
+          sr.createIndex('productId', 'productId', { unique: false });
+          sr.createIndex('date', 'date', { unique: false });
+        }
+      };
+      req.onsuccess = () => { _idb = req.result; resolve(_idb); };
+      req.onerror = () => reject(req.error);
+      req.onblocked = () => console.warn('DB blocked');
+    });
+  }
+
+  // ── 简化的数据库 API ────────────────────────────────────────
+  // all(storeName) → array
+  function dbAll(store) {
+    return idb().then(db => new Promise((resolve, reject) => {
+      const req = db.transaction(store, 'readonly').objectStore(store).getAll();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    }));
+  }
+
+  // get(storeName, id) → object
+  function dbGet(store, id) {
+    return idb().then(db => new Promise((resolve, reject) => {
+      const req = db.transaction(store, 'readonly').objectStore(store).get(id);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    }));
+  }
+
+  // count(storeName) → number
+  function dbCount(store) {
+    return idb().then(db => new Promise((resolve, reject) => {
+      const req = db.transaction(store, 'readonly').objectStore(store).count();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    }));
+  }
+
+  // add(storeName, obj) → id
+  function dbAdd(store, obj) {
+    return idb().then(db => new Promise((resolve, reject) => {
+      const req = db.transaction(store, 'readwrite').objectStore(store).add(obj);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    }));
+  }
+
+  // bulkAdd(storeName, arr)
+  function dbBulkAdd(store, arr) {
+    return idb().then(db => new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      const st = tx.objectStore(store);
+      for (const item of arr) st.add(item);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    }));
+  }
+
+  // update(storeName, id, changes)
+  function dbUpdate(store, id, changes) {
+    return idb().then(db => new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      const st = tx.objectStore(store);
+      const req = st.get(id);
+      req.onsuccess = () => {
+        const obj = req.result;
+        if (!obj) { reject(new Error('not found')); return; }
+        Object.assign(obj, changes);
+        st.put(obj);
+        tx.oncomplete = () => resolve();
+      };
+      req.onerror = () => reject(req.error);
+    }));
+  }
+
+  // delete(storeName, id)
+  function dbDelete(store, id) {
+    return idb().then(db => new Promise((resolve, reject) => {
+      const req = db.transaction(store, 'readwrite').objectStore(store).delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    }));
+  }
+
+  // where(storeName, index, value) → array
+  function dbWhere(store, index, value) {
+    return idb().then(db => new Promise((resolve, reject) => {
+      const req = db.transaction(store, 'readonly').objectStore(store).index(index).getAll(value);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    }));
+  }
+
+  // whereBetween(storeName, index, lo, hi) → array
+  function dbBetween(store, index, lo, hi, includeLo, includeHi) {
+    return idb().then(db => new Promise((resolve, reject) => {
+      const range = IDBKeyRange.bound(lo, hi, includeLo !== false, includeHi !== false);
+      const req = db.transaction(store, 'readonly').objectStore(store).index(index).getAll(range);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    }));
+  }
+
+  // countWhere(storeName, index, value) → number
+  function dbCountWhere(store, index, value) {
+    return idb().then(db => new Promise((resolve, reject) => {
+      const req = db.transaction(store, 'readonly').objectStore(store).index(index).count(value);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    }));
+  }
+
+  // ── Tab 切换 ──────────────────────────────────────────────
+  let currentTab = 'home';
+
+  function switchTab(tabName) {
+    currentTab = tabName;
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + tabName).classList.add('active');
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    document.querySelector('.tab-item[data-page="' + tabName + '"]').classList.add('active');
+    if (tabName === 'home') refreshHome();
+    if (tabName === 'inventory') refreshInventory();
+    if (tabName === 'record') refreshRecordForm();
+    if (tabName === 'calendar') renderCalendar();
+    if (tabName === 'stats') refreshStats();
+  }
+
+  function goRecord(mode) {
+    switchTab('record');
+    switchRecordMode(mode);
+  }
+
+  // ── Format helpers ───────────────────────────────────────
+  function formatMoney(n) {
+    return '¥' + Number(n || 0).toFixed(2);
+  }
+
+  function formatDate(d) {
+    const dt = new Date(d);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  function todayStr() {
+    return formatDate(new Date());
+  }
+
+  function getWeekday(d) {
+    const days = ['日', '一', '二', '三', '四', '五', '六'];
+    return days[new Date(d + 'T00:00:00').getDay()];
+  }
+
+  // ── Toast ─────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast ' + (type || '') + ' show';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.classList.remove('show'); }, 2000);
+  }
+
+  // ── Modal ─────────────────────────────────────────────────
+  function openModal(html) {
+    document.getElementById('modal-content').innerHTML = html;
+    document.getElementById('modal-overlay').classList.add('show');
+  }
+
+  function closeModal(e) {
+    if (e && e.target !== document.getElementById('modal-overlay')) return;
+    document.getElementById('modal-overlay').classList.remove('show');
+  }
+
+  // ── 预置商品 ─────────────────────────────────────────────
+  const PRESET_PRODUCTS = [
+    { name: '矿泉水', costPrice: 1.50, sellPrice: 3.00 },
+    { name: '可乐',   costPrice: 2.50, sellPrice: 5.00 },
+    { name: '面包',   costPrice: 5.00, sellPrice: 8.00 },
+    { name: '牛奶',   costPrice: 6.00, sellPrice: 10.00 },
+    { name: '鸡蛋',   costPrice: 1.00, sellPrice: 2.00 },
+    { name: '泡面',   costPrice: 3.00, sellPrice: 5.00 },
+    { name: '薯片',   costPrice: 4.00, sellPrice: 7.00 },
+    { name: '巧克力', costPrice: 8.00, sellPrice: 15.00 },
+    { name: '纸巾',   costPrice: 2.00, sellPrice: 4.00 },
+    { name: '洗衣液', costPrice: 15.00, sellPrice: 25.00 },
+    { name: '洗发水', costPrice: 20.00, sellPrice: 35.00 },
+    { name: '牙膏',   costPrice: 8.00, sellPrice: 15.00 },
+    { name: '电池',   costPrice: 2.00, sellPrice: 5.00 },
+    { name: '笔记本', costPrice: 3.00, sellPrice: 6.00 },
+    { name: '圆珠笔', costPrice: 1.00, sellPrice: 3.00 }
+  ];
+
+  async function seedData() {
+    const count = await dbCount('products');
+    if (count === 0) {
+      const now = new Date();
+      await dbBulkAdd('products', PRESET_PRODUCTS.map(p => ({ ...p, createdAt: now })));
+    }
+  }
+
+  // ── 库存计算 ─────────────────────────────────────────────
+  async function getAllStocks() {
+    const products = await dbAll('products');
+    const purchases = await dbAll('purchaseRecords');
+    const sales = await dbAll('salesRecords');
+
+    const stockMap = {};
+    for (const p of purchases) stockMap[p.productId] = (stockMap[p.productId] || 0) + p.quantity;
+    for (const s of sales) stockMap[s.productId] = (stockMap[s.productId] || 0) - s.quantity;
+
+    return products.map(p => ({ ...p, stock: stockMap[p.id] || 0 }));
+  }
+
+  async function getStock(productId) {
+    const purchases = await dbWhere('purchaseRecords', 'productId', productId);
+    const sales = await dbWhere('salesRecords', 'productId', productId);
+    const totalIn  = purchases.reduce((s, r) => s + r.quantity, 0);
+    const totalOut = sales.reduce((s, r) => s + r.quantity, 0);
+    return totalIn - totalOut;
+  }
+
+  // ── 库存管理页面 ─────────────────────────────────────────
+  async function refreshInventory() {
+    const list = document.getElementById('product-list');
+    const items = await getAllStocks();
+
+    if (items.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="icon">📦</div><div class="text">还没有商品，点击上方 "+ 添加" 开始</div></div>';
+      return;
+    }
+
+    list.innerHTML = items.map(p => {
+      const stock = p.stock || 0;
+      const barClass = stock >= 20 ? 'safe' : (stock >= 5 ? 'low' : 'danger');
+      const barPct  = Math.min(stock / 50, 1) * 100;
+      const isLow   = stock < 5;
+
+      return `
+        <div class="product-card${isLow ? ' warning' : ''}">
+          <div class="product-name">
+            ${p.name}
+            ${isLow ? '<span class="warning-tag">低库存</span>' : ''}
+          </div>
+          <div class="product-info">
+            成本 ${formatMoney(p.costPrice)} · 售价 ${formatMoney(p.sellPrice)}
+          </div>
+          <div class="stock-bar-wrap">
+            <div class="stock-bar-fill ${barClass}" style="width:${barPct}%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="stock-num${isLow ? ' danger' : ''}">库存：${stock} 件</span>
+          </div>
+          <div class="product-actions">
+            <button class="btn btn-pill" onclick="openProductModal(${p.id})">✏️ 编辑</button>
+            <button class="btn btn-pill" style="background:var(--danger);color:#fff;" onclick="deleteProduct(${p.id}, '${p.name}')">🗑️ 删除</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── 商品弹窗 ─────────────────────────────────────────────
+  async function openProductModal(productId) {
+    let product = null;
+    let title = '添加商品';
+    if (productId) {
+      product = await dbGet('products', productId);
+      title = '编辑商品';
+    }
+    const name = product ? product.name : '';
+    const cost = product ? product.costPrice : '';
+    const sell = product ? product.sellPrice : '';
+
+    openModal(`
+      <div class="modal-title">${title}</div>
+      <div class="form-group">
+        <label class="form-label">商品名称</label>
+        <input type="text" class="form-input" id="modal-name" value="${name}" placeholder="如：矿泉水">
+      </div>
+      <div class="form-group">
+        <label class="form-label">默认成本价（元）</label>
+        <input type="number" inputmode="decimal" class="form-input" id="modal-cost" value="${cost}" placeholder="进货价格" step="0.01" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">默认售价（元）</label>
+        <input type="number" inputmode="decimal" class="form-input" id="modal-sell" value="${sell}" placeholder="卖出价格" step="0.01" min="0">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary btn-block" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary btn-block" style="flex:1;" onclick="saveProduct(${productId || 'null'})">保存</button>
+      </div>
+    `);
+  }
+
+  async function saveProduct(productId) {
+    const name = document.getElementById('modal-name').value.trim();
+    const cost = parseFloat(document.getElementById('modal-cost').value);
+    const sell = parseFloat(document.getElementById('modal-sell').value);
+
+    if (!name) { showToast('请输入商品名称', 'error'); return; }
+    if (isNaN(cost) || cost < 0) { showToast('请输入有效的成本价', 'error'); return; }
+    if (isNaN(sell) || sell < 0) { showToast('请输入有效的售价', 'error'); return; }
+
+    if (productId) {
+      await dbUpdate('products', productId, { name, costPrice: cost, sellPrice: sell });
+      showToast('商品已更新', 'success');
+    } else {
+      await dbAdd('products', { name, costPrice: cost, sellPrice: sell, createdAt: new Date() });
+      showToast('商品已添加', 'success');
+    }
+    closeModal();
+    refreshInventory();
+  }
+
+  // ── 删除商品 ─────────────────────────────────────────────
+  async function deleteProduct(productId, productName) {
+    const purchaseCount = await dbCountWhere('purchaseRecords', 'productId', productId);
+    const salesCount    = await dbCountWhere('salesRecords', 'productId', productId);
+    if (purchaseCount > 0 || salesCount > 0) {
+      showToast('"' + productName + '"已有交易记录，不可删除', 'error');
+      return;
+    }
+    openModal(`
+      <div class="modal-title">确认删除</div>
+      <div style="text-align:center;padding:16px 0;">
+        <div style="font-size:40px;margin-bottom:12px;">🗑️</div>
+        <div style="font-size:16px;color:var(--text);">确定要删除 <strong>"${productName}"</strong> 吗？</div>
+        <div style="font-size:13px;color:var(--text-light);margin-top:4px;">此操作不可撤销</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary btn-block" onclick="closeModal()">取消</button>
+        <button class="btn btn-danger btn-block" style="flex:1;" onclick="confirmDeleteProduct(${productId})">确认删除</button>
+      </div>
+    `);
+  }
+
+  async function confirmDeleteProduct(productId) {
+    await dbDelete('products', productId);
+    closeModal();
+    showToast('商品已删除', 'success');
+    refreshInventory();
+  }
+
+  // ── 首页 ─────────────────────────────────────────────────
+  async function refreshHome() {
+    const today = todayStr();
+    document.getElementById('home-date').textContent = today + ' 星期' + getWeekday(today);
+
+    const todaySales = await dbWhere('salesRecords', 'date', today);
+    const totalIncome = todaySales.reduce((s, r) => s + r.totalPrice, 0);
+    const totalCost   = todaySales.reduce((s, r) => s + r.costPrice * r.quantity, 0);
+    const totalProfit = todaySales.reduce((s, r) => s + r.profit, 0);
+
+    document.getElementById('home-income').textContent = formatMoney(totalIncome);
+    document.getElementById('home-cost').textContent   = formatMoney(totalCost);
+    document.getElementById('home-profit').textContent = formatMoney(totalProfit);
+    if (totalProfit < 0) {
+      document.getElementById('home-profit').classList.add('negative');
+    } else {
+      document.getElementById('home-profit').classList.remove('negative');
+    }
+
+    const purchaseCount = await dbCountWhere('purchaseRecords', 'date', today);
+    const salesCount = await dbCountWhere('salesRecords', 'date', today);
+    document.getElementById('home-purchase-count').textContent = purchaseCount;
+    document.getElementById('home-sale-count').textContent = salesCount;
+
+    const items = await getAllStocks();
+    const lowItems = items.filter(p => p.stock < 5);
+    const lowSection = document.getElementById('home-low-stock-section');
+    const lowList = document.getElementById('home-low-stock-list');
+
+    if (lowItems.length > 0) {
+      lowSection.style.display = 'block';
+      lowList.innerHTML = lowItems.map(p => `
+        <div class="card" style="padding:10px 14px;margin-bottom:6px;border-left:3px solid var(--danger);border-radius:6px;">
+          <span style="font-weight:600;">${p.name}</span>
+          <span style="color:var(--danger);float:right;">剩 ${p.stock} 件</span>
+        </div>
+      `).join('');
+    } else {
+      lowSection.style.display = 'none';
+    }
+  }
+
+  // ── 记账页面 ─────────────────────────────────────────────
+  let recordMode = 'purchase';
+
+  function switchRecordMode(mode) {
+    recordMode = mode;
+    document.getElementById('subtab-purchase').classList.toggle('active', mode === 'purchase');
+    document.getElementById('subtab-sale').classList.toggle('active', mode === 'sale');
+    document.getElementById('record-price-label').textContent = mode === 'purchase' ? '进货单价' : '售价';
+    document.getElementById('record-submit-btn').textContent = mode === 'purchase' ? '📥 确认进货' : '📤 确认卖出';
+    autoFillPrice();
+    calcTotal();
+  }
+
+  async function refreshRecordForm() {
+    const select = document.getElementById('record-product');
+    const products = await dbAll('products');
+    const items = [];
+    for (const p of products) {
+      const stock = await getStock(p.id);
+      items.push({ ...p, stock });
+    }
+    select.innerHTML = '<option value="">请选择商品</option>' +
+      items.map(p => '<option value="' + p.id + '">' + p.name + '（库存 ' + p.stock + ' 件）</option>').join('');
+    select.onchange = autoFillPrice;
+    if (!document.getElementById('record-date').value) {
+      document.getElementById('record-date').value = todayStr();
+    }
+  }
+
+  async function autoFillPrice() {
+    const productId = parseInt(document.getElementById('record-product').value);
+    if (!productId) return;
+    const product = await dbGet('products', productId);
+    if (!product) return;
+    const priceInput = document.getElementById('record-price');
+    if (recordMode === 'purchase') priceInput.value = product.costPrice;
+    else priceInput.value = product.sellPrice;
+    calcTotal();
+  }
+
+  function changeQty(delta) {
+    const span = document.getElementById('record-qty');
+    let val = parseInt(span.textContent) || 1;
+    val = Math.max(1, val + delta);
+    if (val > 9999) val = 9999;
+    span.textContent = val;
+    calcTotal();
+  }
+
+  function calcTotal() {
+    const qty = parseInt(document.getElementById('record-qty').textContent) || 0;
+    const price = parseFloat(document.getElementById('record-price').value) || 0;
+    document.getElementById('record-total').textContent = formatMoney(qty * price);
+  }
+
+  async function submitRecord() {
+    const productId = parseInt(document.getElementById('record-product').value);
+    if (!productId) { showToast('请选择商品', 'error'); return; }
+
+    const qty = parseInt(document.getElementById('record-qty').textContent) || 0;
+    if (qty <= 0) { showToast('数量必须大于0', 'error'); return; }
+
+    const unitPrice = parseFloat(document.getElementById('record-price').value);
+    if (isNaN(unitPrice) || unitPrice < 0) { showToast('请输入有效单价', 'error'); return; }
+
+    const date = document.getElementById('record-date').value || todayStr();
+    const note = document.getElementById('record-note').value.trim();
+    const product = await dbGet('products', productId);
+    const totalPrice = qty * unitPrice;
+
+    if (recordMode === 'purchase') {
+      await dbAdd('purchaseRecords', {
+        productId, productName: product.name,
+        quantity: qty, unitPrice, totalPrice,
+        date, timestamp: new Date(), note
+      });
+      showToast('📥 进货成功！', 'success');
+    } else {
+      const stock = await getStock(productId);
+      if (stock < qty) {
+        showToast('库存不足！当前库存 ' + stock + ' 件', 'error');
+        return;
+      }
+      const costPrice = product.costPrice;
+      const profit = (unitPrice - costPrice) * qty;
+      await dbAdd('salesRecords', {
+        productId, productName: product.name,
+        quantity: qty, unitPrice, totalPrice,
+        costPrice, profit,
+        date, timestamp: new Date(), note
+      });
+      showToast('📤 卖出成功！利润 ' + formatMoney(profit), 'success');
+    }
+
+    document.getElementById('record-qty').textContent = '1';
+    document.getElementById('record-price').value = '';
+    document.getElementById('record-note').value = '';
+    document.getElementById('record-total').textContent = formatMoney(0);
+    refreshInventory();
+    refreshHome();
+  }
+
+  // ── 日历视图 ─────────────────────────────────────────────
+  let calYear, calMonth, calSelectedDate;
+
+  function initCalendar() {
+    const today = new Date();
+    calYear  = today.getFullYear();
+    calMonth = today.getMonth() + 1;
+    calSelectedDate = todayStr();
+  }
+  initCalendar();
+
+  async function renderCalendar() {
+    document.getElementById('cal-month-label').textContent = calYear + '年' + calMonth + '月';
+
+    const monthStart = calYear + '-' + String(calMonth).padStart(2,'0') + '-01';
+    const monthEnd   = calYear + '-' + String(calMonth).padStart(2,'0') + '-' +
+                       new Date(calYear, calMonth, 0).getDate();
+
+    const purchaseDates = (await dbBetween('purchaseRecords', 'date', monthStart, monthEnd))
+      .map(r => r.date);
+    const salesDates = (await dbBetween('salesRecords', 'date', monthStart, monthEnd))
+      .map(r => r.date);
+    const recordDates = new Set([...purchaseDates, ...salesDates]);
+
+    const firstDay = new Date(calYear, calMonth - 1, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+    const daysInPrevMonth = new Date(calYear, calMonth - 1, 0).getDate();
+    const today = todayStr();
+
+    let html = '';
+
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const d = daysInPrevMonth - i;
+      html += '<div class="cal-cell other-month" onclick="calGoMonth(' +
+              (calMonth === 1 ? calYear - 1 : calYear) + ',' +
+              (calMonth === 1 ? 12 : calMonth - 1) + ',' + d + ')">' + d + '</div>';
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = calYear + '-' + String(calMonth).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      const isToday = dateStr === today;
+      const isSelected = dateStr === calSelectedDate;
+      const hasRecord = recordDates.has(dateStr);
+      let cls = 'cal-cell';
+      if (isToday) cls += ' today';
+      if (isSelected) cls += ' selected';
+      html += '<div class="' + cls + '" onclick="calSelectDate(\'' + dateStr + '\')">' +
+              d + (hasRecord ? '<span class="cal-dot"></span>' : '') + '</div>';
+    }
+
+    const remaining = 42 - firstDay - daysInMonth;
+    for (let d = 1; d <= remaining; d++) {
+      html += '<div class="cal-cell other-month" onclick="calGoMonth(' +
+              (calMonth === 12 ? calYear + 1 : calYear) + ',' +
+              (calMonth === 12 ? 1 : calMonth + 1) + ',' + d + ')">' + d + '</div>';
+    }
+
+    document.getElementById('cal-grid').innerHTML = html;
+    await calShowRecords();
+  }
+
+  function calPrevMonth() {
+    if (calMonth === 1) { calYear--; calMonth = 12; }
+    else { calMonth--; }
+    renderCalendar();
+  }
+
+  function calNextMonth() {
+    if (calMonth === 12) { calYear++; calMonth = 1; }
+    else { calMonth++; }
+    renderCalendar();
+  }
+
+  function calGoToday() {
+    const today = new Date();
+    calYear = today.getFullYear();
+    calMonth = today.getMonth() + 1;
+    calSelectedDate = todayStr();
+    renderCalendar();
+  }
+
+  function calGoMonth(y, m, d) {
+    calYear = y;
+    calMonth = m;
+    calSelectedDate = y + '-' + String(m).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    renderCalendar();
+  }
+
+  function calSelectDate(dateStr) {
+    calSelectedDate = dateStr;
+    renderCalendar();
+  }
+
+  async function calShowRecords() {
+    const label = document.getElementById('cal-selected-date-label');
+    const purchaseList = document.getElementById('cal-purchase-list');
+    const saleList = document.getElementById('cal-sale-list');
+    const empty = document.getElementById('cal-empty');
+
+    label.textContent = '📅 ' + calSelectedDate + ' 星期' + getWeekday(calSelectedDate) + ' 的记录';
+
+    const purchases = await dbWhere('purchaseRecords', 'date', calSelectedDate);
+    const sales     = await dbWhere('salesRecords', 'date', calSelectedDate);
+
+    if (purchases.length === 0 && sales.length === 0) {
+      empty.style.display = 'block';
+      purchaseList.innerHTML = '';
+      saleList.innerHTML = '';
+      return;
+    }
+
+    empty.style.display = 'none';
+
+    if (purchases.length > 0) {
+      purchaseList.innerHTML = '<div class="record-section-title">📥 进货 (' + purchases.length + '笔)</div>' +
+        purchases.map(r => '<div class="record-item">' +
+          '<div class="record-item-left"><div class="record-item-name">' + r.productName +
+          '</div><div class="record-item-detail">×' + r.quantity + ' 件 · 单价 ' + formatMoney(r.unitPrice) +
+          (r.note ? ' · ' + r.note : '') + '</div></div>' +
+          '<div class="record-item-right"><div class="record-item-amount">' + formatMoney(r.totalPrice) + '</div></div>' +
+          '</div>').join('');
+    } else {
+      purchaseList.innerHTML = '';
+    }
+
+    if (sales.length > 0) {
+      saleList.innerHTML = '<div class="record-section-title mt-md">📤 卖出 (' + sales.length + '笔)</div>' +
+        sales.map(r => '<div class="record-item">' +
+          '<div class="record-item-left"><div class="record-item-name">' + r.productName +
+          '</div><div class="record-item-detail">×' + r.quantity + ' 件 · 单价 ' + formatMoney(r.unitPrice) +
+          (r.note ? ' · ' + r.note : '') + '</div></div>' +
+          '<div class="record-item-right"><div class="record-item-amount">' + formatMoney(r.totalPrice) + '</div>' +
+          '<div class="record-item-profit ' + (r.profit >= 0 ? 'positive' : 'negative') + '">利润 ' + formatMoney(r.profit) + '</div></div>' +
+          '</div>').join('');
+    } else {
+      saleList.innerHTML = '';
+    }
+  }
+
+  // ── 统计报表 (CSS 柱状图替代 Chart.js) ─────────────────────
+  let statsPeriod = 'month';
+
+  function switchPeriod(period) {
+    statsPeriod = period;
+    document.querySelectorAll('#page-stats .btn-pill[data-period]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.period === period);
+    });
+    const dateInput = document.getElementById('stats-date');
+    const today = new Date();
+    if (period === 'year') {
+      dateInput.type = 'text';
+      dateInput.value = today.getFullYear() + '年';
+    } else if (period === 'month') {
+      dateInput.type = 'month';
+      dateInput.value = todayStr().substring(0, 7);
+    } else if (period === 'week') {
+      dateInput.type = 'week';
+      dateInput.value = todayStr().substring(0, 7) + '-W' +
+        String(Math.ceil((today.getDate() + 6 - today.getDay()) / 7)).padStart(2,'0');
+    } else {
+      dateInput.type = 'date';
+      dateInput.value = todayStr();
+    }
+    refreshStats();
+  }
+
+  function getDateRange() {
+    const dateInput = document.getElementById('stats-date').value;
+    const format = (dt) => {
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2,'0');
+      const d = String(dt.getDate()).padStart(2,'0');
+      return y + '-' + m + '-' + d;
+    };
+
+    switch (statsPeriod) {
+      case 'day': {
+        const d = dateInput || todayStr();
+        return { start: d, end: d };
+      }
+      case 'week': {
+        if (!dateInput) {
+          const today = new Date();
+          const dow = today.getDay();
+          const mon = new Date(today);
+          mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+          const sun = new Date(mon);
+          sun.setDate(mon.getDate() + 6);
+          return { start: format(mon), end: format(sun) };
+        }
+        const parts = dateInput.split('-W');
+        const y = parseInt(parts[0]);
+        const w = parseInt(parts[1]);
+        const jan1 = new Date(y, 0, 1);
+        const days = (w - 1) * 7;
+        const mon = new Date(jan1);
+        mon.setDate(jan1.getDate() + days - jan1.getDay() + 1);
+        const sun = new Date(mon);
+        sun.setDate(mon.getDate() + 6);
+        return { start: format(mon), end: format(sun) };
+      }
+      case 'month': {
+        if (!dateInput) {
+          const today = new Date();
+          return {
+            start: format(new Date(today.getFullYear(), today.getMonth(), 1)),
+            end: format(new Date(today.getFullYear(), today.getMonth() + 1, 0))
+          };
+        }
+        const [y, m] = dateInput.split('-').map(Number);
+        return { start: format(new Date(y, m - 1, 1)), end: format(new Date(y, m, 0)) };
+      }
+      case 'year': {
+        let y = dateInput ? parseInt(dateInput) : new Date().getFullYear();
+        if (isNaN(y)) y = new Date().getFullYear();
+        return { start: y + '-01-01', end: y + '-12-31' };
+      }
+      default:
+        return { start: todayStr(), end: todayStr() };
+    }
+  }
+
+  async function refreshStats() {
+    const { start, end } = getDateRange();
+
+    const sales = await dbBetween('salesRecords', 'date', start, end);
+    const totalIncome = sales.reduce((s, r) => s + r.totalPrice, 0);
+    const totalCost   = sales.reduce((s, r) => s + r.costPrice * r.quantity, 0);
+    const totalProfit = sales.reduce((s, r) => s + r.profit, 0);
+
+    document.getElementById('stats-income').textContent = formatMoney(totalIncome);
+    document.getElementById('stats-cost').textContent   = formatMoney(totalCost);
+    document.getElementById('stats-profit').textContent = formatMoney(totalProfit);
+
+    renderChart(sales);
+  }
+
+  function renderChart(sales) {
+    const wrap = document.querySelector('.chart-wrap');
+    if (!wrap) return;
+
+    // 按周期聚合
+    const groups = {};
+    for (const r of sales) {
+      let key;
+      if (statsPeriod === 'year') key = r.date.substring(0, 7);
+      else key = r.date;
+      if (!groups[key]) groups[key] = { income: 0, cost: 0, profit: 0 };
+      groups[key].income += r.totalPrice;
+      groups[key].cost   += r.costPrice * r.quantity;
+      groups[key].profit += r.profit;
+    }
+
+    const keys = Object.keys(groups).sort();
+    if (keys.length === 0) {
+      wrap.innerHTML = '<div class="empty-state" style="padding:30px 0;"><div class="icon">📊</div><div class="text">暂无数据</div></div>';
+      return;
+    }
+
+    // 找最大值用于计算高度
+    let maxVal = 0;
+    for (const k of keys) {
+      maxVal = Math.max(maxVal, groups[k].income, groups[k].cost);
+    }
+    if (maxVal === 0) maxVal = 1;
+
+    const labels = keys.map(k => statsPeriod === 'year' ? k : k.substring(5));
+    const maxBarH = 160; // px
+
+    let html = '<div style="display:flex;align-items:flex-end;gap:6px;height:200px;padding-bottom:20px;position:relative;">';
+
+    for (let i = 0; i < keys.length; i++) {
+      const g = groups[keys[i]];
+      const incomeH = Math.max(4, (g.income / maxVal) * maxBarH);
+      const costH = Math.max(4, (g.cost / maxVal) * maxBarH);
+
+      html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:20px;">' +
+        '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;">' +
+        '<div style="width:70%;height:' + incomeH + 'px;background:rgba(212,136,140,0.7);border-radius:4px 4px 0 0;min-height:2px;" title="收入 ' + formatMoney(g.income) + '"></div>' +
+        '<div style="width:40%;height:' + costH + 'px;background:rgba(224,168,172,0.5);border-radius:4px 4px 0 0;min-height:2px;" title="成本 ' + formatMoney(g.cost) + '"></div>' +
+        '</div>' +
+        '<div style="font-size:10px;color:var(--text-light);margin-top:4px;transform:rotate(-30deg);white-space:nowrap;">' + labels[i] + '</div>' +
+        '</div>';
+    }
+
+    html += '</div>';
+    html += '<div style="display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:11px;color:var(--text-light);">' +
+      '<span>🟥 收入</span><span>⬜ 成本</span>' +
+      '</div>';
+
+    wrap.innerHTML = html;
+  }
+
+  // ── CSV 导出 (替代 SheetJS XLSX) ────────────────────────────
+  function csvEscape(str) {
+    if (!str) return '';
+    str = String(str);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  }
+
+  async function exportExcel() {
+    const start = document.getElementById('export-start').value;
+    const end   = document.getElementById('export-end').value;
+
+    if (!start || !end) { showToast('请选择起止日期', 'error'); return; }
+    if (start > end) { showToast('开始日期不能晚于结束日期', 'error'); return; }
+
+    const purchases = await dbBetween('purchaseRecords', 'date', start, end);
+    const sales = await dbBetween('salesRecords', 'date', start, end);
+
+    if (purchases.length === 0 && sales.length === 0) {
+      showToast('所选日期范围内没有数据', 'error');
+      return;
+    }
+
+    // 生成 CSV（BOM 头确保 Excel 正确识别中文）
+    const BOM = '﻿';
+    let csv = BOM;
+
+    csv += '=== 进货记录 ===\n';
+    csv += '日期,商品,数量,进货单价(元),总价(元),备注\n';
+    for (const r of purchases) {
+      csv += [r.date, csvEscape(r.productName), r.quantity, r.unitPrice, r.totalPrice, csvEscape(r.note)].join(',') + '\n';
+    }
+
+    csv += '\n=== 销售记录 ===\n';
+    csv += '日期,商品,数量,售价(元),总收入(元),成本价(元),利润(元),备注\n';
+    for (const r of sales) {
+      csv += [r.date, csvEscape(r.productName), r.quantity, r.unitPrice, r.totalPrice, r.costPrice, r.profit, csvEscape(r.note)].join(',') + '\n';
+    }
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '记账数据_' + start + '_至_' + end + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('📥 导出成功！', 'success');
+  }
+
+  // ── Initialize ────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', async () => {
+    // 初始化数据库 + 写入预置商品
+    await seedData();
+
+    // 设置默认日期
+    const today = todayStr();
+    document.getElementById('record-date').value = today;
+    document.getElementById('stats-date').value = today;
+    document.getElementById('export-start').value = today;
+    document.getElementById('export-end').value = today;
+
+    // 验证
+    const count = await dbCount('products');
+    console.log('📦 数据库就绪，商品数量：' + count);
+
+    // 注册 Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/jzbook/sw.js')
+        .then(reg => console.log('✅ SW:', reg.scope))
+        .catch(err => console.warn('SW:', err));
+    }
+
+    refreshHome();
+  });
+  </script>
+
+</body>
+</html>
+
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
